@@ -1,0 +1,5 @@
+dependencies {
+    ext.rootProjectLibs = new File(rootDir.toString().substring(0,rootDir.toString().lastIndexOf('\\'))+"/${mainProjectName}"+'/','publib').getAbsolutePath()
+    ext.jarTree =fileTree(dir: rootProjectLibs,include: '**/*.jar')
+    compile jarTree
+}

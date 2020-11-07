@@ -1,0 +1,77 @@
+  def baseProps = new Properties()
+  new File(rootDir.toString().substring(0,rootDir.toString().lastIndexOf('\\'))+"/${mainProjectName}"+"/gradle.properties").withInputStream { 
+    stream -> baseProps.load(stream) 
+  }
+  def baseConfig = new ConfigSlurper().parse(baseProps)
+  
+  apply plugin: 'java'
+  apply plugin: 'eclipse'
+  apply plugin: 'application'
+  if(!baseConfig.sgdsp.equals("") && baseConfig.sgdsp.toBoolean()) {
+   apply plugin: "io.spring.dependency-management"
+   apply plugin: "com.taobao.pandora.boot"
+  }else {
+    apply plugin: 'spring-boot'
+  }
+
+
+  sourceCompatibility = baseConfig.jdkVersion
+
+  //微服务主工程名称
+  def mainProjectName = "${mainProjectName}"
+  
+  //SG-UAP基础框架组件库
+  if(!baseConfig.mavenRepository.equals("") && baseConfig.mavenRepository.toBoolean()) {
+    repositories {
+     maven { url baseConfig.repositoryURL }
+     mavenLocal() 
+     mavenCentral()
+  }
+  }else{
+   repositories {
+      flatDir {
+           dirs '../'+mainProjectName+'/uaplib'
+      }
+  }
+  }
+
+  //微服务工程私有组件库
+  repositories {
+      flatDir {
+          dirs 'lib'
+      }
+  }
+
+   //加载公共编译配置
+  apply from: '../'+mainProjectName+'/publicbuild.gradle'
+  
+  //加载SG-UAP基础框架组件
+  apply from: '../'+mainProjectName+'/uapdepload.gradle'
+  
+   //加载公共组件
+  apply from: '../'+mainProjectName+'/pubdepload.gradle'
+  
+  //加载微服务工程私有组件
+  apply from: '../'+mainProjectName+'/pridepload.gradle'
+  
+  test {
+    systemProperties 'property': 'value'
+  }
+
+  if(!baseConfig.sgdsp.equals("") && baseConfig.sgdsp.toBoolean()) {
+    pandoraBoot{
+       excludeSar=false
+    }
+    dependencyManagement {
+       imports {
+         mavenBom 'org.springframework.boot:spring-boot-dependencies:1.4.1.RELEASE'
+       }  
+    }
+  }
+  uploadArchives {
+     repositories {
+       flatDir {
+           dirs 'repos'
+       }
+     }
+  }
